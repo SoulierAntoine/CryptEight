@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/fabrice/CLionProjects/CryptEight/crypt-eight.h
+
+/Users/fabrice/CLionProjects/CryptEight/main.c
+stdlib.h
+-
+stdio.h
+-
+string.h
+-
+sys/types.h
+-
+sys/wait.h
+-
+sys/socket.h
+-
+netinet/in.h
+-
+arpa/inet.h
+-
+unistd.h
+-
+signal.h
+-
+pthread.h
+-
+crypt-eight.h
+/Users/fabrice/CLionProjects/CryptEight/crypt-eight.h
+

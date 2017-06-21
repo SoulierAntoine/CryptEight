@@ -8,6 +8,8 @@ int 		client(int port, char* host);
 int 		server(int port);
 int			create_socket(int port);
 void 		*connection_handler(void *arg);
+// void        encryptDecrypt(char *input, char *output, char *key);
+void encryptDecrypt(char *output, char *input);
 
 // Utility functions header
 
