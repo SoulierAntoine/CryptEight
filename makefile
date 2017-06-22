@@ -1,2 +1,2 @@
 make:
-	gcc -Wall main.c -o crypt-eight
+	gcc -Wall example.c -o example -L./lib/gmp-6.1.0 -lgmp

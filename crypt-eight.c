@@ -31,6 +31,9 @@
 #include <signal.h>
 #include <pthread.h>
 
+// GMP
+#include "lib/gmp-6.1.0/include/gmp.h"
+
 #include "crypt-eight.h"
 
 #define BUF_SIZE 256

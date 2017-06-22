@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+crypt-eight
+prev/
+lib/
+socket-encryption.c
+
