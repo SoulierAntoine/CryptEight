@@ -110,16 +110,58 @@ int 	client(int port, char* host)
 
 		fflush(stdout); 
 		memset(&buffer, 0, sizeof(buffer));
+
 		fgets(buffer, BUF_SIZE, stdin);
-		if (write(sockfd, buffer, BUF_SIZE) < 0)
+
+        /*
+         * Chiffrement de Nawako ! Attention tout peut péter !
+         */
+        char key[] = {'C'}; //Can be any chars, and any size array
+
+        char* output = NULL;
+        output = malloc(BUF_SIZE);
+        memcpy(output, buffer, BUF_SIZE);
+        // encryptDecrypt(buffer, encrypted, key);
+        encryptDecrypt(output, buffer);
+        printf("Buffer: %s\n", buffer);
+
+        // memset(&buffer, 0, sizeof(buffer));
+        // encryptDecrypt(buffer, key);
+        printf("Buffer: %s\n", output);
+
+        // char decrypted[strlen(buffer)];
+        // encryptDecrypt(encrypted, decrypted, key);
+        // printf("Decrypted:%s\n", decrypted);
+        // =====================================================
+
+		if (write(sockfd, output, BUF_SIZE) < 0)
 	        print_error("Erreur while writing to the server.\n");
 	}
-
 
     close(sockfd);
 	return 0;
 }
 
+//void xor_encrypt(char *key, char *string)
+//{
+//    int i, string_length = strlen(string);
+//    for(i=0; i<string_length; i++)
+//    {
+//        string[i]=string[i]^key[i];
+//        // printf("%i", string[i]);
+//    }
+//}
+
+// void encryptDecrypt(char *input, char *output, char *key)
+void encryptDecrypt(char *output, char *input)
+{
+    char key[] = {'K', 'C', 'Q'}; //Can be any chars, and any size array
+
+    for(int i = 0; i < strlen(input); ++i) {
+        // output[i] = input[i] ^ key[i % (sizeof(key)/sizeof(char))];
+        output[i] = input[i] ^ key[i % (sizeof(key) / sizeof(char))];
+    }
+}
 
 void *connection_handler(void *arg)
 {
@@ -134,8 +176,21 @@ void *connection_handler(void *arg)
 
     while ((bytes = read(client_socketfd, buffer, BUF_SIZE)) > 0)
     {
-    	printf("Client: %s", buffer);
+        /*
+         * Déchiffrement de Nawako ! Attention tout peut péter !
+         */
+        //char key[] = {'C'}; //Can be any chars, and any size array
+
+        // char decrypted[strlen(buffer)];
+        char* output = NULL;
+        output = malloc(BUF_SIZE);
+        memcpy(output, buffer, BUF_SIZE);
+        encryptDecrypt(output, buffer);
+
+        printf("Client: %s\n", buffer);
+        printf("Client: %s\n", output);
     	memset(buffer, 0, sizeof(bytes));
+        // =====================================================
     }
 
     if (bytes == 0)

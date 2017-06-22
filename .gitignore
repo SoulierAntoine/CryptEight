@@ -55,4 +55,5 @@ crypt-eight
 prev/
 lib/
 socket-encryption.c
-
+.idea/
+cmake-build-debug/
