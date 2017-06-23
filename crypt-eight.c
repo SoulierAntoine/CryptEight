@@ -40,10 +40,10 @@
 
 
 /**
- * [main description]
- * @param  argc [description]
- * @param  argv [description]
- * @return      [description]
+ * Launch either server or client depending on args
+ * @param  argc number of args passed
+ * @param  argv value of args
+ * @return      either exit if an error occured or return 0
  */
 int     main(int argc, char *argv[])
 {
@@ -82,10 +82,10 @@ int     main(int argc, char *argv[])
 
 
 /**
- * [client description]
- * @param  port [description]
- * @param  host [description]
- * @return      [description]
+ * Launch client
+ * @param  port specify port to attached
+ * @param  host specify host (server)
+ * @return      returns 0 when connection ends
  */
 int     client(int port, char* host)
 {
@@ -93,9 +93,9 @@ int     client(int port, char* host)
     struct sockaddr_in server;
     char buffer[BUF_SIZE] = {0};
     int sockfd;
-    int mutual_key_size = 1 + (2 * KEY_SIZE * sizeof(char));
+    size_t mutual_key_size = 1 + (2 * KEY_SIZE * sizeof(char));
 
-    char* crypted_message = NULL;
+    char *crypted_message = NULL;
     char *mutual_key = NULL;
     char *new_key = NULL;
     char *key = NULL;
@@ -133,21 +133,21 @@ int     client(int port, char* host)
 
     // Get generated key from server
     mutual_key = malloc(mutual_key_size);
-    if (mutual_key)
-        printf("TODO");
+    if (mutual_key == NULL)
+        print_error("Could not allocate memory for mutual key");
 
     if (read(sockfd, mutual_key, sizeof(mutual_key)) < 0)
         print_error("Error while reading key of client");
     else
         printf("Connection is secure. Mutual key : %s\n", mutual_key);
     
-    new_key = malloc(mutual_key_size);
-    if (key == NULL)
-        printf("TODO");
+    new_key = malloc(sizeof(mutual_key));
+    if (new_key == NULL)
+        print_error("Could not allocate memory for the new key");
         
     crypted_message = malloc(BUF_SIZE);
-        if (key == NULL)
-            printf("TODO");
+    if (crypted_message == NULL)
+        print_error("Could not allocate memory for the crypted message");
             
 
 
@@ -166,16 +166,16 @@ int     client(int port, char* host)
         // Encrypt what's been written
         memcpy(crypted_message, buffer, BUF_SIZE);
         xor_encrypt_decrypt(crypted_message, buffer, mutual_key);
-        // printf("Crypted string: %s\n", output);
-        /* for (int i = 0; i < strlen(output); ++i)
-            printf("%d ", buffer[i]);
-            // printf("%x ", buffer[i] & 0xff);
-        printf("\n"); */
-
+        
+        printf("Crypted string: ");
+        for (int i = 0; i < strlen(crypted_message); ++i)
+            // printf("%d ", buffer[i]);
+            printf("%x ", crypted_message[i] & 0xff);
+        printf("\n"); 
 
         // Generate new key from encrypted message
-        // generate_new_key(mutual_key, crypted_message, new_key);
-        // memcpy(mutual_key, new_key, mutual_key_size);
+        generate_new_key(mutual_key, crypted_message, new_key);
+        memcpy(mutual_key, new_key, mutual_key_size);
 
         // Send it to server
         if (write(sockfd, crypted_message, BUF_SIZE) < 0)
@@ -186,7 +186,6 @@ int     client(int port, char* host)
     free(new_key);
     free(mutual_key);
     free(crypted_message);
-    free(mutual_key);
 
     close(sockfd);
     return 0;
@@ -194,20 +193,20 @@ int     client(int port, char* host)
 
 
 /**
- * [connection_handler description]
- * @param  arg [description]
- * @return     [description]
+ * Handles client connection
+ * @param  arg socket file descriptor of the client
  */
 void    *connection_handler(void *arg)
 {
     int client_socketfd = *(int*) arg;
     char buffer[BUF_SIZE] = {0};
     int bytes = 0;
+    size_t mutual_key_size = 1 + (sizeof(char) * KEY_SIZE * 2);
 
     char *client_key = NULL;
     char *key = NULL;
     char *mutual_key = NULL;
-
+    char *new_key = NULL;
 
     // Send acknowledgment of connection
     if (write(client_socketfd, "Connection established", 22) < 0)
@@ -228,9 +227,13 @@ void    *connection_handler(void *arg)
     if (key == NULL)
         print_error("Error while establishing secure connection");
 
-    mutual_key = malloc(BUF_SIZE * sizeof(char));
+    mutual_key = malloc(mutual_key_size);
     if (mutual_key == NULL)
         print_error("Could not allocate memory for mutual key");
+
+    new_key = malloc(mutual_key_size);
+    if (new_key == NULL)
+        print_error("Could not allocate memory for new key");
 
     strcpy(mutual_key, client_key);
     strcat(mutual_key, key);
@@ -254,8 +257,13 @@ void    *connection_handler(void *arg)
     while ((bytes = read(client_socketfd, buffer, BUF_SIZE)) > 0)
     {
         memcpy(decrypted_message, buffer, BUF_SIZE);
+        generate_new_key(mutual_key, decrypted_message, new_key);
 
+        // TODO: check on first message what's happening
         xor_encrypt_decrypt(decrypted_message, buffer, mutual_key);
+        
+        // TODO: only copy what's needed
+        memcpy(mutual_key, new_key, mutual_key_size);
 
         printf("Client: %s\n", decrypted_message);
         memset(buffer, 0, sizeof(bytes));
@@ -279,10 +287,9 @@ void    *connection_handler(void *arg)
 
 
 /**
- * [xor_encrypt_decrypt description]
- * @param  output [description]
- * @param  input  [description]
- * @return        [description]
+ * Encrypt or decrypt an input based on XOR operator
+ * @param  output will receive the encrypted / decrypted string
+ * @param  input  to be decrypted / encrypted
  */
 void    xor_encrypt_decrypt(char *output, char *input, char* key)
 {
@@ -293,8 +300,8 @@ void    xor_encrypt_decrypt(char *output, char *input, char* key)
 
 
 /**
- * [generate_key description]
- * @return [description]
+ * Generate random key of size KEY_SIZE + 1 (for null terminator)
+ * @return a random string
  */
 char*   generate_key()
 {
@@ -305,15 +312,15 @@ char*   generate_key()
 
 
 /**
- * [generate_new_key description]
- * @param  mutual_key      [description]
- * @param  crypted_message [description]
- * @param  new_key         [description]
- * @return                 [description]
+ * Generate new key based on the crypted message and the current key
+ * The size is fixed to be KEY_SIZE * 2
+ * @param  mutual_key      the current key
+ * @param  crypted_message the encrypted message
+ * @param  new_key         the new key taking the first char of the current key, then the first char of the crypted message, then the second char of the current key and so on
  */
 void    generate_new_key(char* mutual_key, char* crypted_message, char* new_key)
 {
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < (KEY_SIZE * 2); ++i)
     {
         *new_key++ = *mutual_key++;
         *new_key++ = *crypted_message++;
@@ -324,9 +331,9 @@ void    generate_new_key(char* mutual_key, char* crypted_message, char* new_key)
 
 
 /**
- * [server description]
- * @param  port [description]
- * @return      [description]
+ * Launch server socket on specified port
+ * @param  port the port to launch the socket on
+ * @return      returns 0 to main function or exit
  */
 int     server(int port)
 {
@@ -368,6 +375,11 @@ int     server(int port)
 }
 
 
+/**
+ * Create a socket for the server
+ * @param  port to attached the socket on
+ * @return      a socket file descriptor
+ */
 int     create_socket(int port)
 {
     // Struct describing the socket of the server and the client
@@ -411,8 +423,7 @@ int     create_socket(int port)
 
 /**
  * Get rid of the carriage return and empty buffer if needed
- * @param  buffer [description]
- * @return        [description]
+ * @param  buffer to be checked
  */
 void    check_buffer(char *buffer)
 {
@@ -430,9 +441,9 @@ void    check_buffer(char *buffer)
 
 
 /**
- * [rand_string_alloc description]
- * @param  size [description]
- * @return      [description]
+ * Allocate memory for given size
+ * @param  size to be allocated
+ * @return      Then call rand_string to generate a random string
  */
 char*   rand_string_alloc(size_t size)
 {
@@ -445,10 +456,10 @@ char*   rand_string_alloc(size_t size)
 
 
 /**
- * [rand_string description]
- * @param  str  [description]
- * @param  size [description]
- * @return      [description]
+ * Generate a random string composed of the latin alphabet
+ * @param  str  that'll receive the random string
+ * @param  size of the string
+ * @return      the randomly generated string
  */
 char    *rand_string(char *str, size_t size)
 {
@@ -470,9 +481,8 @@ char    *rand_string(char *str, size_t size)
 
 
 /**
- * [print_error description]
- * @param  msg [description]
- * @return     [description]
+ * print error and exit process
+ * @param  msg custom message
  */
 void    print_error(const char *msg)
 {
@@ -482,7 +492,7 @@ void    print_error(const char *msg)
 
 
 /**
- * [print_usage description]
+ * Print how to use the program
  */
 void    print_usage()
 {
@@ -499,9 +509,9 @@ void    print_usage()
 
 
 /**
- * [str_to_int description]
- * @param  str [description]
- * @return     [description]
+ * Convert the argument passed in main function to int
+ * @param  str to be converted
+ * @return     an int if the conversion went ok or -1
  */
 int     str_to_int(char *str)
 {
@@ -529,9 +539,9 @@ int     str_to_int(char *str)
 
 
 /**
- * [is_number description]
- * @param  c [description]
- * @return   [description]
+ * check if the given char is a number
+ * @param  c chazr to be checked
+ * @return   0 or 1
  */
 int     is_number(char c)
 {

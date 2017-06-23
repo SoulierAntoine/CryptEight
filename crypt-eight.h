@@ -10,7 +10,7 @@ int			create_socket(int port);
 void 		*connection_handler(void *arg);
 void	    xor_encrypt_decrypt(char *output, char *input, char* key);
 char*		generate_key();
-void	    generate_new_key(char* mutual_key, char* crypted_message, char* new_key)
+void	    generate_new_key(char* mutual_key, char* crypted_message, char* new_key);
 
 
 // Utility functions header
