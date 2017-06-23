@@ -167,11 +167,11 @@ int     client(int port, char* host)
         memcpy(crypted_message, buffer, BUF_SIZE);
         xor_encrypt_decrypt(crypted_message, buffer, mutual_key);
         
+        // Print crypted string (a copy will be found in wireshark)
         printf("Crypted string: ");
         for (int i = 0; i < strlen(crypted_message); ++i)
-            // printf("%d ", buffer[i]);
             printf("%x ", crypted_message[i] & 0xff);
-        printf("\n"); 
+        printf("\n");
 
         // Generate new key from encrypted message
         generate_new_key(mutual_key, crypted_message, new_key);
@@ -259,13 +259,11 @@ void    *connection_handler(void *arg)
         memcpy(decrypted_message, buffer, BUF_SIZE);
         generate_new_key(mutual_key, decrypted_message, new_key);
 
-        // TODO: check on first message what's happening
         xor_encrypt_decrypt(decrypted_message, buffer, mutual_key);
-        
-        // TODO: only copy what's needed
         memcpy(mutual_key, new_key, mutual_key_size);
 
         printf("Client: %s\n", decrypted_message);
+
         memset(buffer, 0, sizeof(bytes));
     }
 
