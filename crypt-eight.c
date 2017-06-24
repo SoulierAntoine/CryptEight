@@ -174,7 +174,7 @@ int     client(int port, char* host)
         printf("\n");
 
         // Generate new key from encrypted message
-        generate_new_key(mutual_key, crypted_message, new_key);
+        generate_new_key(mutual_key, buffer, new_key);
         memcpy(mutual_key, new_key, mutual_key_size);
 
         // Send it to server
@@ -256,14 +256,16 @@ void    *connection_handler(void *arg)
     // Reading loop
     while ((bytes = read(client_socketfd, buffer, BUF_SIZE)) > 0)
     {
+        // Decrypt given message
         memcpy(decrypted_message, buffer, BUF_SIZE);
-        generate_new_key(mutual_key, decrypted_message, new_key);
-
         xor_encrypt_decrypt(decrypted_message, buffer, mutual_key);
+
+        // Update server key
+        generate_new_key(mutual_key, buffer, new_key);
         memcpy(mutual_key, new_key, mutual_key_size);
 
+        // Display what the client sent
         printf("Client: %s\n", decrypted_message);
-
         memset(buffer, 0, sizeof(bytes));
     }
 
